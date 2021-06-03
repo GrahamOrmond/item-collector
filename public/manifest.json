@@ -1,0 +1,39 @@
+{
+  "version": "1.0",
+  "name": "Item Collector",
+  "description": "",
+  "manifest_version": 2,
+  "web_accessible_resources": [
+  ],
+  "icons": {
+      "16": "favicon.ico",
+      "48": "favicon.ico",
+      "128": "favicon.ico"
+  },
+  "permissions": [
+  ],
+  "browser_action": {
+      "default_title": "Item Collector",
+      "default_popup": "index.html"
+  },
+  "background": {
+      "scripts": [
+      "background.js"
+      ],
+      "persistent": true
+  },
+  "content_scripts": [
+      {
+        "matches": [
+            "https://www.ocs.ca/*"
+          ],
+        "js": [
+          "collector/main.js"
+          ],
+        "css": [
+          "collector/style.css"
+          ],
+        "run_at": "document_end"
+      }
+  ]
+}

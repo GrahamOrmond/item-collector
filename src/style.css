@@ -1,0 +1,12 @@
+html, body, .app-body {
+    margin: 0px;
+    padding: 0px;
+    width: 400px;
+    height: 600px;
+    overflow: hidden;
+}
+
+.app-body {
+    background-color: #202124;
+    color: #D6D6D7;
+}
