@@ -11,6 +11,7 @@
       "128": "favicon.ico"
   },
   "permissions": [
+    "https://localhost:44303/*"
   ],
   "browser_action": {
       "default_title": "Item Collector",
@@ -25,9 +26,10 @@
   "content_scripts": [
       {
         "matches": [
-            "https://www.ocs.ca/*"
-          ],
+            "https://ocs.ca/*"
+        ],
         "js": [
+          "collector/external-doms.js",
           "collector/main.js"
           ],
         "css": [
