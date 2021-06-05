@@ -6,6 +6,8 @@ if (itemCollectorExternal === undefined) {
             let currentUrl = window.location.href;
             if(currentUrl.includes("shop-by-brand")){
                 brandsSetup();
+            }else if(currentUrl.includes("/products/")){
+                productSetup();
             }
         }
 
@@ -30,6 +32,19 @@ if (itemCollectorExternal === undefined) {
             brandsContainer.insertBefore(buttonContent, brandsResults);
         }
 
+        function productSetup(){
+            let mainContent = document.getElementById("main");
+            let menuButton = document.createElement("div");
+            menuButton.classList.add("menu-display")
+
+            let button = document.createElement("button");
+            button.classList.add("menu-button")
+            button.addEventListener("click", importProduct);
+            menuButton.appendChild(button);
+            mainContent.appendChild(menuButton);
+        }
+
+
         function importBrands(event){
             event.target.disabled = true;
             
@@ -41,11 +56,11 @@ if (itemCollectorExternal === undefined) {
             let brandsLinks = brandsResults.querySelectorAll(".letter__result a");
 
             let brands = {
-                'BrandsList': []
+                'Brands': []
             };
             brandsLinks.forEach(brandLink => {
                 let link = brandLink.href;
-                brands['BrandsList'].push({
+                brands['Brands'].push({
                     "BrandId": link.split("/").pop(),
                     "BrandName": brandLink.innerHTML,
                     'Link': link,
@@ -59,6 +74,58 @@ if (itemCollectorExternal === undefined) {
                     data: brands
                 },
                 function(response) {
+                    event.target.disabled = false;
+                    console.log(response);
+            });
+        }
+
+        function importProduct(){
+            let productTitle = document.querySelector(".product__title")
+                .innerText.trim();
+
+            let productTypeInfo = document.querySelector(".breadcrumbs")
+                .querySelectorAll("span");
+
+            let productCategory = productTypeInfo[0].innerText;
+            let productType = productTypeInfo[1].innerText;
+
+            let productInfoDom = document
+                .querySelector(".product__description");
+
+            let description = productInfoDom.querySelector(".content").innerText;
+
+            let productProps = document
+                .getElementById("product__properties-table")
+                .querySelectorAll("tr");
+
+            let productInfo = {};
+            productProps.forEach(element => {
+                let content = element.querySelectorAll("td");
+
+                let propName = content[0].textContent.trim()
+                    .replace(" ", '').toLowerCase();
+                let propValue = content[1].textContent.trim();
+
+                productInfo[[propName]] = propValue;
+            });
+            console.log(productInfo);
+            let importData = {
+                brandName: productInfo.brand,
+                productName: productTitle,
+                category: productCategory,
+                type: productType,
+                description: description,
+                link: window.location.href
+            }
+
+            chrome.runtime.sendMessage(
+                {
+                    action: "import",
+                    resource: "products",
+                    data: importData
+                },
+                function(response) {
+                    event.target.disabled = false;
                     console.log(response);
             });
         }
