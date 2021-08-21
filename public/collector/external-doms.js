@@ -12,6 +12,8 @@ if (itemCollectorExternal === undefined) { // external item collector not define
             }else if(currentUrl.includes("/products/")){ // products
                 productSetup();
             }
+
+            return true
         }
 
         // brands page setup
@@ -45,19 +47,20 @@ if (itemCollectorExternal === undefined) { // external item collector not define
         // product page setup
         // used to setup product page for importing items
         function productSetup(){
-            // find the main info DOM
-            let mainContent = document.getElementById("main");
-
-            // create page button for importing
-            let menuButton = document.createElement("div");
-            menuButton.classList.add("menu-display")
-            let button = document.createElement("button");
-            button.classList.add("menu-button")
-            button.addEventListener("click", importProduct); // add import function to button
-
-            // add button DOM to page
-            menuButton.appendChild(button);
-            mainContent.appendChild(menuButton);
+            // fetch existng productinfo
+            chrome.runtime.sendMessage( // send message to chrome background.js to run the POST request
+                // message data
+                {
+                    action: "get", // determines the message action
+                    resource: "products", // determines the resource
+                    data: getProductData() // API data
+                },
+                // callback function
+                function(response){
+                    if(response.status === 404){ // product not found
+                        importProduct()
+                    }
+                });
         }
 
         // import brands function
@@ -97,13 +100,28 @@ if (itemCollectorExternal === undefined) { // external item collector not define
                 },
                 // callback function
                 function(response) { 
-                    event.target.disabled = false;  // re-enable import button
             });
         }
 
         // import products function
         // used to import a single product from ocs product page
         function importProduct(){
+            // send message to chrome background.js to run the POST request
+            chrome.runtime.sendMessage(
+                // message data
+                {
+                    action: "import", // determines the message action
+                    resource: "products", // determines the resource
+                    data: getProductData() // API data
+                },
+                // callback function
+                (response) => {
+            });
+        }
+
+        // get all product doms and return their data
+        // used turn product DOMS into a usable object
+        const getProductData = () => {
             // get product info
             let productTitle = document.querySelector(".product__title")
                 .innerText.trim(); // title
@@ -137,8 +155,8 @@ if (itemCollectorExternal === undefined) { // external item collector not define
                 productInfo[[propName]] = propValue; // add to properties list
             });
 
-            // create API POST data
-            let importData = {
+            // return product data
+            return {
                 brandName: productInfo.brand, // each product has a brand property
                 productName: productTitle,
                 category: productCategory,
@@ -146,19 +164,6 @@ if (itemCollectorExternal === undefined) { // external item collector not define
                 description: description,
                 link: window.location.href
             }
-
-            // send message to chrome background.js to run the POST request
-            chrome.runtime.sendMessage(
-                // message data
-                {
-                    action: "import", // determines the message action
-                    resource: "products", // determines the resource
-                    data: importData // API data
-                },
-                // callback function
-                function(response) {
-                    event.target.disabled = false;  // re-enable import button
-            });
         }
 
         // only return function to be public

@@ -25,7 +25,7 @@ if(itemCollector === undefined) { // main function not defined
             if(!isSetup){ // failed to setup the page
                 // delay time to give the page more time to load
                 setTimeout(function(){
-                    setupFunction();
+                    setupFunction(); // run the function one last time
                 }, 2500);
             }
         }
