@@ -1,60 +1,77 @@
 
-if (itemCollectorExternal === undefined) {
-    var itemCollectorExternal = (function(){
+if (itemCollectorExternal === undefined) { // external item collector not defined
+    var itemCollectorExternal = (function(){ // create external item collector
 
+        // ocs page setup function
+        // used to setup import actions for each type of page on ocs
         function setupOcs(){
+            // check url to determine import type
             let currentUrl = window.location.href;
-            if(currentUrl.includes("shop-by-brand")){
+            if(currentUrl.includes("shop-by-brand")){ // brands
                 brandsSetup();
-            }else if(currentUrl.includes("/products/")){
+            }else if(currentUrl.includes("/products/")){ // products
                 productSetup();
             }
+
+            return true
         }
 
+        // brands page setup
+        // used to setup the brands page for importing all brands
         function brandsSetup(){
 
+            // find the brands count DOM 
             let brandsContent = document.getElementById("shopify-section-en-brands")
-            let brandsCount = brandsContent.querySelector(".js-brands-search-count");
-            brandsCount.id = "collector_brands_count"
+            let brandsCount = brandsContent.querySelector(".js-brands-search-count")
+                .innerText;
 
-            let brandsContainer = brandsContent.querySelector(".brands.container");
-
-            let brandsResults = brandsContainer.querySelector(".brands__results");
-            brandsResults.id = "collector_brands_results";
-            let buttonContent = document.createElement("div");
-            buttonContent.classList.add("ocs-button-content")
-            let button = document.createElement("button");
-            button.innerText = "Import Brands";
-            button.addEventListener("click", importBrands);
-
-
-            buttonContent.appendChild(button);
-            brandsContainer.insertBefore(buttonContent, brandsResults);
+            // fetch existng productinfo
+            chrome.runtime.sendMessage( // send message to chrome background.js to run the POST request
+            // message data
+            {
+                action: "get", // determines the message action
+                resource: "brands", // determines the resource
+                data: {} // API data
+            },
+            // callback function
+            function(response){
+                if(parseInt(response.responseText) < brandsCount){ // not same count
+                    importBrands() // import brands list
+                }
+            });
         }
 
+        // product page setup
+        // used to setup product page for importing items
         function productSetup(){
-            let mainContent = document.getElementById("main");
-            let menuButton = document.createElement("div");
-            menuButton.classList.add("menu-display")
-
-            let button = document.createElement("button");
-            button.classList.add("menu-button")
-            button.addEventListener("click", importProduct);
-            menuButton.appendChild(button);
-            mainContent.appendChild(menuButton);
+            // fetch existng productinfo
+            chrome.runtime.sendMessage( // send message to chrome background.js to run the POST request
+                // message data
+                {
+                    action: "get", // determines the message action
+                    resource: "products", // determines the resource
+                    data: getProductData() // API data
+                },
+                // callback function
+                function(response){
+                    if(response.status === 404){ // product not found
+                        importProduct()
+                    }
+                });
         }
 
+        // import brands function
+        // used to import a list of brands from ocs brands page
+        function importBrands(){
+            // find the DOM with all the brands listed in them
+            let brandsContent = document.getElementById("shopify-section-en-brands")
+            let brandsContainer = brandsContent.querySelector(".brands.container");
+            let brandsResults = brandsContainer.querySelector(".brands__results");
 
-        function importBrands(event){
-            event.target.disabled = true;
-            
-            let brandsCount = document
-                .getElementById("collector_brands_count").innerText;
-            let brandsResults =  document
-                .getElementById("collector_brands_results");
-
+            // get all brands from brands list DOM
             let brandsLinks = brandsResults.querySelectorAll(".letter__result a");
 
+            // place each brand DOM element into a list for API POST
             let brands = {
                 'Brands': []
             };
@@ -67,71 +84,85 @@ if (itemCollectorExternal === undefined) {
                 });
             });
 
+            // send message to chrome background.js to run the POST request
             chrome.runtime.sendMessage(
+                // message data
                 {
-                    action: "import",
-                    resource: "brands",
-                    data: brands
+                    action: "import", // determines the message action
+                    resource: "brands", // determines the resource
+                    data: brands // API data
                 },
-                function(response) {
-                    event.target.disabled = false;
-                    console.log(response);
+                // callback function
+                function(response) { 
             });
         }
 
+        // import products function
+        // used to import a single product from ocs product page
         function importProduct(){
-            let productTitle = document.querySelector(".product__title")
-                .innerText.trim();
+            // send message to chrome background.js to run the POST request
+            chrome.runtime.sendMessage(
+                // message data
+                {
+                    action: "import", // determines the message action
+                    resource: "products", // determines the resource
+                    data: getProductData() // API data
+                },
+                // callback function
+                (response) => {
+            });
+        }
 
+        // get all product doms and return their data
+        // used turn product DOMS into a usable object
+        const getProductData = () => {
+            // get product info
+            let productTitle = document.querySelector(".product__title")
+                .innerText.trim(); // title
+
+            // category/type
             let productTypeInfo = document.querySelector(".breadcrumbs")
                 .querySelectorAll("span");
+            let productCategory = productTypeInfo[0].innerText; // category
+            let productType = productTypeInfo[1].innerText; // type
 
-            let productCategory = productTypeInfo[0].innerText;
-            let productType = productTypeInfo[1].innerText;
-
+             // description
             let productInfoDom = document
                 .querySelector(".product__description");
+            let description = productInfoDom.querySelector(".content").innerText;  
 
-            let description = productInfoDom.querySelector(".content").innerText;
-
+            // properties DOM
             let productProps = document
                 .getElementById("product__properties-table")
                 .querySelectorAll("tr");
 
-            let productInfo = {};
+            // take propeties DOM and turn it into usable data
+            let productInfo = {}; // list of properties
             productProps.forEach(element => {
-                let content = element.querySelectorAll("td");
+                let content = element.querySelectorAll("td"); // each list element
 
+                // trim values
                 let propName = content[0].textContent.trim()
                     .replace(" ", '').toLowerCase();
                 let propValue = content[1].textContent.trim();
 
-                productInfo[[propName]] = propValue;
+                productInfo[[propName]] = propValue; // add to properties list
             });
-            console.log(productInfo);
-            let importData = {
-                brandName: productInfo.brand,
+
+            // return product data
+            return {
+                brandName: productInfo.brand, // each product has a brand property
                 productName: productTitle,
                 category: productCategory,
                 type: productType,
                 description: description,
                 link: window.location.href
             }
-
-            chrome.runtime.sendMessage(
-                {
-                    action: "import",
-                    resource: "products",
-                    data: importData
-                },
-                function(response) {
-                    event.target.disabled = false;
-                    console.log(response);
-            });
         }
 
+        // only return function to be public
         return {
-            setupOcs: setupOcs,
+            setupOcs: setupOcs, // setups ocs page for importing
         };
     })();
 }
