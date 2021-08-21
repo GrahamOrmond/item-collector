@@ -2,20 +2,24 @@
 // message listener
 chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
-        if(request.action == "import"){
+        // check the action to determine the function to run
+        // all functions take in resource, data and responseCallback
+        if(request.action == "import"){ // import action
             importResource(request.resource, request.data, sendResponse);
         }
         return true;
     }
 );
 
-
+// import resource function
+// used to import resources to an API
 async function importResource(resourceType, data, sendResponse){
-    let response;
-    if(resourceType == "brands"){
+    // determine the resource to import
+    let response; 
+    if(resourceType == "brands"){ // import brands list
         response = await importBrandsList(data)
-    }else if (resourceType == "products"){
-        response = await importProduct(data)
+    }else if (resourceType == "products"){ // import products
+        response = await importProduct(data) // import single product
     }
 
     // return results
@@ -25,7 +29,8 @@ async function importResource(resourceType, data, sendResponse){
     });
 }
 
-
+// import brands list function
+// used to send brands data to and API to import
 async function importBrandsList(resourceData){
     // make the request to create the resource
     return new Promise(function (resolve, reject) {
@@ -52,7 +57,8 @@ async function importBrandsList(resourceData){
     }).catch(err => console.log(err));
 }
 
-
+// import single product function
+// used to send single product data to an API to import
 async function importProduct(resourceData){
     // make the request to create the resource
     return new Promise(function (resolve, reject) {
