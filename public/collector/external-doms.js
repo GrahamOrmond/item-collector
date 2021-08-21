@@ -20,28 +20,25 @@ if (itemCollectorExternal === undefined) { // external item collector not define
         // used to setup the brands page for importing all brands
         function brandsSetup(){
 
-            // find the brands count DOM and place and Id for later reference
+            // find the brands count DOM 
             let brandsContent = document.getElementById("shopify-section-en-brands")
-            let brandsCount = brandsContent.querySelector(".js-brands-search-count");
-            brandsCount.id = "collector_brands_count"
+            let brandsCount = brandsContent.querySelector(".js-brands-search-count")
+                .innerText;
 
-            // find the DOM with all the brands listed in them
-            let brandsContainer = brandsContent.querySelector(".brands.container");
-
-            // add an Id to the brands list
-            let brandsResults = brandsContainer.querySelector(".brands__results");
-            brandsResults.id = "collector_brands_results";
-
-            // create page button for importing the items
-            let buttonContent = document.createElement("div");
-            buttonContent.classList.add("ocs-button-content")
-            let button = document.createElement("button");
-            button.innerText = "Import Brands";
-            button.addEventListener("click", importBrands); // add import function to button
-
-            // add button DOM to page
-            buttonContent.appendChild(button);
-            brandsContainer.insertBefore(buttonContent, brandsResults);
+            // fetch existng productinfo
+            chrome.runtime.sendMessage( // send message to chrome background.js to run the POST request
+            // message data
+            {
+                action: "get", // determines the message action
+                resource: "brands", // determines the resource
+                data: {} // API data
+            },
+            // callback function
+            function(response){
+                if(parseInt(response.responseText) < brandsCount){ // not same count
+                    importBrands() // import brands list
+                }
+            });
         }
 
         // product page setup
@@ -65,14 +62,11 @@ if (itemCollectorExternal === undefined) { // external item collector not define
 
         // import brands function
         // used to import a list of brands from ocs brands page
-        function importBrands(event){
-            event.target.disabled = true; // disable import button to prevent double import
-            
-            // get brand info DOM references
-            let brandsCount = document
-                .getElementById("collector_brands_count").innerText; // brands count
-            let brandsResults =  document
-                .getElementById("collector_brands_results"); // brands list DOM
+        function importBrands(){
+            // find the DOM with all the brands listed in them
+            let brandsContent = document.getElementById("shopify-section-en-brands")
+            let brandsContainer = brandsContent.querySelector(".brands.container");
+            let brandsResults = brandsContainer.querySelector(".brands__results");
 
             // get all brands from brands list DOM
             let brandsLinks = brandsResults.querySelectorAll(".letter__result a");

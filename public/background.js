@@ -20,7 +20,7 @@ async function importResource(resourceType, data, sendResponse){
     // determine the resource to import
     let url; 
     if(resourceType == "brands"){ // import brands list
-        url = `/api/brands/ list`;
+        url = `/api/brands/list`;
     }else if (resourceType == "products"){ // import products
         url = `/api/products`;
     }
